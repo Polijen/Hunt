@@ -7,6 +7,9 @@
 // Hunt_ID e un file name
 // treasure e doar un nume si o valoare
 
+//la prima rulare sa faca un director special unde se vor tine toate hunturile(directoarele)
+
+
 
 
 //Exemplu de command line de pe campus
@@ -61,22 +64,33 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   
   printf("Adaugam sesiunea: %s\n", hunt_id);
   char ask;
+  FILE *f = NULL;
   
   DIR *dr = opendir(hunt_id);
   if (dr == NULL){
     printf("Doresti o noua sesiune ? [y, n]\n");
     scanf("%c", &ask);
     if(ask == 'y'){
-      //mkdir(hunt_id); //creeaza directorul
+      mkdir(hunt_id); //creeaza directorul si dupa scrie in el
       //cd(hunt_id);
+
+      T_info data = in_data();
+      f = fopen(data.Treasure_ID, "w"); //daca nu este imi va crea unul nou
+      fprintf(f, "Treasure_ID: %s\nUser_Name: %s\nCords: %f,%f\nClue: %s\nValue: %d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
+      fclose(f);
     }
     else if(ask == 'n'){
-      printf("Reintrodu comanda cu numele corespunzator\n");
+      printf("Reintrodu comanda cu numele corespunzator sesiunii existente\n");
     }
   }
-  else{ //daca exista directorul 
+  else{ //daca exista directorul,ma mut in el si adaug in now file 
     T_info data = in_data();
     print_treasure_info(data);
+    f = fopen(data.Treasure_ID, "w"); //daca nu este imi va crea unul 
+
+    fprintf(f, "Treasure_ID: %s\nUser_Name: %s\nCords: %f,%f\nClue: %s\nValue: %d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
+
+    fclose(f);
   }
   closedir(dr);
 }
