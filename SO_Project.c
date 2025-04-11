@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
+#include <fcntl.h> //asta e pentru functia de open
+#include <unistd.h>
+
 //Intrebare pt prof:
 // Hunt_ID e un file name
 // treasure e doar un nume si o valoare
@@ -32,7 +36,7 @@ typedef struct{ //User File ce stochiaza informatia despre trasures
 }T_info;
 
 //functii personale
-T_info in_data(){
+T_info in_data(){ //ar fi bine sa introduc si verificare la input + limitatoare
   T_info temp;
   printf("Introdu datele comorii:\n");
   printf("ID: ");
@@ -49,7 +53,7 @@ T_info in_data(){
   return temp;
 }
 
-void print_treasure_info(T_info treasure) {
+void print_treasure_info(T_info treasure) { //functie de testare
   printf("Treasure ID: %s\n", treasure.Treasure_ID);
   printf("User Name: %s\n", treasure.User_Name);
   printf("GPS Coordinates: (%.2f, %.2f)\n", treasure.GPS.X, treasure.GPS.Y);
@@ -57,6 +61,24 @@ void print_treasure_info(T_info treasure) {
   printf("Value: %d\n", treasure.value);
 }
 
+char* path_maker(char *hunt_id, char *treasure_id){
+  char *path = NULL;
+  int len = strlen(hunt_id) + strlen(treasure_id) ;
+  if ((path = (char*)realloc(path, sizeof(char) * len)) == NULL){
+    perror("Erroare de alocare\n");
+    exit(-1);
+  } 
+  strcpy(path, hunt_id);
+  strcat(path, "/");
+  strcat(path, treasure_id);
+  printf("%s\n", path);
+  return path;
+}
+
+char* data_buffer(T_info data){
+
+
+}
 
 //functiile de implementat
 
@@ -71,19 +93,28 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
     printf("Doresti o noua sesiune ? [y, n]\n");
     scanf("%c", &ask);
     if(ask == 'y'){
-      mkdir(hunt_id); //creeaza directorul si dupa scrie in el
+      mkdir(hunt_id,  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //creeaza directorul si dupa scrie in el
       //cd(hunt_id);
 
       T_info data = in_data();
-      f = fopen(data.Treasure_ID, "w"); //daca nu este imi va crea unul nou
-      fprintf(f, "Treasure_ID: %s\nUser_Name: %s\nCords: %f,%f\nClue: %s\nValue: %d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
-      fclose(f);
+
+      char *path = path_maker(hunt_id, "Treasures");
+      int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+      if( write(fd, &data, sizeof(T_info)) == -1 ){
+        perror("Erroare de scriere\n");
+      }
+  
+      close(fd);
+
+
     }
     else if(ask == 'n'){
       printf("Reintrodu comanda cu numele corespunzator sesiunii existente\n");
     }
   }
   else{ //daca exista directorul,ma mut in el si adaug in now file 
+    /*
     T_info data = in_data();
     print_treasure_info(data);
     f = fopen(data.Treasure_ID, "w"); //daca nu este imi va crea unul 
@@ -91,12 +122,29 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
     fprintf(f, "Treasure_ID: %s\nUser_Name: %s\nCords: %f,%f\nClue: %s\nValue: %d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
 
     fclose(f);
+    */
+    T_info data = in_data();
+    char *path = path_maker(hunt_id, "Treasures");
+    
+
+    int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
+
+    if( write(fd, &data, sizeof(T_info)) == -1 ){
+      perror("Erroare de scriere\n");
+    }
+
+    close(fd);
+
+
   }
   closedir(dr);
 }
 
 void list(char *hunt_id){ //List all treasures in the specified hunt. First print the hunt name, the (total) file size and last modification time of its treasure file(s), then list the treasures.
+  DIR *dr = opendir(hunt_id);
 
+
+  closedir(dr);
 }
 
 void view(char hunt_id, char *ID){ //View details of a specific treasure
@@ -104,7 +152,11 @@ void view(char hunt_id, char *ID){ //View details of a specific treasure
 }
 
 void remove_tresure(char *hunt_id, char *ID){ //Remove treasure
+  char *path = path_maker(hunt_id, ID);
+  if(remove(path) != 0){
+    perror("Erroare de stergere\n");
 
+  }
 }
 
 void remove_hunt(char *hunt_id){ //Remove an entire hunt
@@ -113,6 +165,7 @@ void remove_hunt(char *hunt_id){ //Remove an entire hunt
 
 
 int main(int argc, char **argv){
+
 
   if (argc < 3 || argc > 4){ //verificam ca numarul de argumente corect
     perror("Arguments do not match\n");
