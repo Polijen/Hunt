@@ -63,22 +63,20 @@ void print_treasure_info(T_info treasure) { //functie de testare
 
 char* path_maker(char *hunt_id, char *treasure_id){
   char *path = NULL;
-  int len = strlen(hunt_id) + strlen(treasure_id) ;
+  int len = strlen(hunt_id) + strlen(treasure_id) + strlen("Hunts") + 2;
   if ((path = (char*)realloc(path, sizeof(char) * len)) == NULL){
     perror("Erroare de alocare\n");
     exit(-1);
   } 
-  strcpy(path, hunt_id);
+  strcpy(path, "Hunts");
+  strcat(path, "/");
+  strcat(path, hunt_id);
   strcat(path, "/");
   strcat(path, treasure_id);
   printf("%s\n", path);
   return path;
 }
 
-char* data_buffer(T_info data){
-
-
-}
 
 //functiile de implementat
 
@@ -86,7 +84,7 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   
   printf("Adaugam sesiunea: %s\n", hunt_id);
   char ask;
-  FILE *f = NULL;
+
   
   DIR *dr = opendir(hunt_id);
   if (dr == NULL){
@@ -94,13 +92,13 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
     scanf("%c", &ask);
     if(ask == 'y'){
       mkdir(hunt_id,  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //creeaza directorul si dupa scrie in el
-      //cd(hunt_id);
+      
 
       T_info data = in_data();
 
-      char *path = path_maker(hunt_id, "Treasures");
+      char *path = path_maker(hunt_id, "Treasures.txt");
       int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
-
+      printf("\n%s\n", path);
       if( write(fd, &data, sizeof(T_info)) == -1 ){
         perror("Erroare de scriere\n");
       }
@@ -124,7 +122,7 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
     fclose(f);
     */
     T_info data = in_data();
-    char *path = path_maker(hunt_id, "Treasures");
+    char *path = path_maker(hunt_id, "Treasures.txt");
     
 
     int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -147,11 +145,11 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
   closedir(dr);
 }
 
-void view(char hunt_id, char *ID){ //View details of a specific treasure
+void view(char *hunt_id, char *ID){ //View details of a specific treasure
 
 }
 
-void remove_tresure(char *hunt_id, char *ID){ //Remove treasure
+void remove_treasure(char *hunt_id, char *ID){ //Remove treasure, trebuie sa le sterg din fisier
   char *path = path_maker(hunt_id, ID);
   if(remove(path) != 0){
     perror("Erroare de stergere\n");
@@ -166,25 +164,35 @@ void remove_hunt(char *hunt_id){ //Remove an entire hunt
 
 int main(int argc, char **argv){
 
-
   if (argc < 3 || argc > 4){ //verificam ca numarul de argumente corect
     perror("Arguments do not match\n");
     exit(-2);
   }
-  printf("Argumen %s\n", argv[1]);
+  //Verific/creiez un nou director "Hunts" ce va tine toata hunt-urile
+  DIR *dr = opendir("Hunts");
+  if (dr == NULL){
+    mkdir("Hunts", S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //Super Director
+  
+    closedir(dr);
+  }
+  else{
+    closedir(dr);
+  }
+
+  
   
   if (!strcmp(argv[1], "add")){
     // printf("Adunare\n, %s" ,argv[2]);
     add(argv[2]);
   }
   else if (!strcmp(argv[1], "list")){
-    printf("List\n");
+    list(argv[2]);
   }
   else if (!strcmp(argv[1], "view")){
-    printf("view\n");
+    view(argv[1], argv[2]);
   }
   else if (!strcmp(argv[1], "remove_treasure")){
-    printf("rm treasure\n");
+    remove_treasure(argv[1] ,argv[2]);
     
   }
   else if (!strcmp(argv[1], "remove_hunt")){
