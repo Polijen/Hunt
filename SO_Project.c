@@ -77,6 +77,13 @@ char* path_maker(char *hunt_id, char *treasure_id){
   return path;
 }
 
+char* folder_path_maker(char *hunt_id){
+  char *folder_path = malloc(sizeof(char) * (strlen(hunt_id) + 8 ));
+  strcpy(folder_path, "Hunts/");
+  strcat(folder_path, hunt_id);
+  return (folder_path);
+}
+
 
 //functiile de implementat
 
@@ -84,58 +91,42 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   
   printf("Adaugam sesiunea: %s\n", hunt_id);
   char ask;
-
-  
-  DIR *dr = opendir(hunt_id);
+  char *folder_path = folder_path_maker(hunt_id);
+ 
+  DIR *dr = opendir(folder_path);
   if (dr == NULL){
     printf("Doresti o noua sesiune ? [y, n]\n");
     scanf("%c", &ask);
     if(ask == 'y'){
-      mkdir(hunt_id,  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //creeaza directorul si dupa scrie in el
+      mkdir(folder_path,  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //creeaza directorul si dupa scrie in el
       
-
-      T_info data = in_data();
-
-      char *path = path_maker(hunt_id, "Treasures.txt");
-      int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
-      printf("\n%s\n", path);
-      if( write(fd, &data, sizeof(T_info)) == -1 ){
-        perror("Erroare de scriere\n");
-      }
-  
-      close(fd);
-
-
     }
     else if(ask == 'n'){
       printf("Reintrodu comanda cu numele corespunzator sesiunii existente\n");
+      exit(0);
     }
-  }
-  else{ //daca exista directorul,ma mut in el si adaug in now file 
-    /*
-    T_info data = in_data();
-    print_treasure_info(data);
-    f = fopen(data.Treasure_ID, "w"); //daca nu este imi va crea unul 
-
-    fprintf(f, "Treasure_ID: %s\nUser_Name: %s\nCords: %f,%f\nClue: %s\nValue: %d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
-
-    fclose(f);
-    */
-    T_info data = in_data();
-    char *path = path_maker(hunt_id, "Treasures.txt");
-    
-
-    int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644);
-
-    if( write(fd, &data, sizeof(T_info)) == -1 ){
-      perror("Erroare de scriere\n");
-    }
-
-    close(fd);
-
-
   }
   closedir(dr);
+
+  T_info data = in_data(); //
+
+  char *path = path_maker(hunt_id, "Treasures.txt");
+  int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644); // 000 101 100 100
+  printf("\n%s\n", path);
+
+  char buffer[2048];//screm asa pentru a fi mai usor de extras datele cu strtok
+  sprintf(buffer, "%s|%s|%.2f|%.2f|%s|%d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
+
+
+  if( write(fd, buffer, strlen(buffer)) == -1 ){//scrie automat in fisier prin concatenare
+    perror("Erroare de scriere\n");
+  }
+
+  close(fd);
+
+//eliberam stringurile de path
+ free(path);
+ free(folder_path);
 }
 
 void list(char *hunt_id){ //List all treasures in the specified hunt. First print the hunt name, the (total) file size and last modification time of its treasure file(s), then list the treasures.
@@ -146,6 +137,9 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
 }
 
 void view(char *hunt_id, char *ID){ //View details of a specific treasure
+  
+  //DIR *dr = opendir();
+
 
 }
 
