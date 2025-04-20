@@ -6,7 +6,7 @@
 #include <dirent.h>
 #include <fcntl.h> //asta e pentru functia de open
 #include <unistd.h>
-#include <time.h>
+#include <time.h> //pentru screrea timpului intr-un format citibil
 
 //Intrebare pt prof:
 // Hunt_ID e un file name
@@ -74,7 +74,7 @@ char* path_maker(char *hunt_id, char *treasure_id){
   strcat(path, hunt_id);
   strcat(path, "/");
   strcat(path, treasure_id);
-  printf("%s\n", path);
+  //printf("%s\n", path); //folosit pentru a verifica stringul de path
   return path;
 }
 
@@ -115,7 +115,7 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644); // 000 101 100 100
   printf("\n%s\n", path);
 
-  char buffer[2048];//screm asa pentru a fi mai usor de extras datele cu strtok
+  char buffer[2048];//screm asa pentru a fi mai usor de extras datele cu strtok sau alte functii
   sprintf(buffer, "%s|%s|%.2f|%.2f|%s|%d\n", data.Treasure_ID, data.User_Name, data.GPS.X, data.GPS.Y, data.clue, data.value);
 
 
@@ -136,7 +136,7 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
   
   printf("Hunt Name: %s \n", hunt_id); //printeaza numele huntului specific
   
-  struct stat st; //Printarea marimiii fisierului in bytes
+  struct stat st; //Printarea marimiii fisierului in bytes/data modificatii
   if (stat(path, &st) == 0) {
     printf("File size: %ld bytes\n", st.st_size);
     printf("Last modification time (secunde): %ld\n", st.st_mtim.tv_sec);
@@ -146,7 +146,7 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
 
     // Format time as a string
     char time_str[100];
-    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", mod_time);
+    strftime(time_str, sizeof(time_str), "%d-%m-%Y %H:%M:%S", mod_time);
     
     printf("Last modification time: %s\n", time_str);
 
@@ -158,14 +158,10 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
     perror("Erroare de alocare de memorie in functia list\n");
     exit(-1);
   }
-  
+  printf("\nTreasures: \n");
   while(read(fd, buffer, 1024) > 0){ //listam treasures 
     printf("%s", buffer);
   }
-  /*
-  read(fd, buffer, 1024);
-  printf("%s\n", buffer);
-*/
 
   close(fd);
   free(buffer);
@@ -174,10 +170,21 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
 }
 
 void view(char *hunt_id, char *ID){ //View details of a specific treasure
+  char *folder_path = folder_path_maker(hunt_id);
+  char *path = path_maker(hunt_id, "Treasures.txt");
   
-  //DIR *dr = opendir();
+  int fd = open(path, O_RDONLY); //doar sa citim un specific treasure
+  char *buffer = malloc(sizeof(char) * 1024); 
+  if(buffer == NULL){
+    perror("Erroare de alocare de memorie in functia list\n");
+    exit(-1);
+  }
 
+  //read();
 
+  close(fd);
+  free(path);
+  free(folder_path);
 }
 
 void remove_treasure(char *hunt_id, char *ID){ //Remove treasure, trebuie sa le sterg din fisier
