@@ -146,22 +146,24 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
 
     // Format time as a string
     char time_str[100];
-    strftime(time_str, sizeof(time_str), "%d-%m-%Y %H:%M:%S", mod_time);
+    strftime(time_str, sizeof(time_str), "%d/%m/%Y %H:%M:%S", mod_time);
     
     printf("Last modification time: %s\n", time_str);
 
   }
 
   int fd = open(path, O_RDONLY );
-  char *buffer = malloc(sizeof(char) * 1024); //facem un buffer penru a citit, si ii dam free la final
-  if(buffer == NULL){
+  char *buffer = malloc(sizeof(char) * 129); //facem un buffer penru a citit, si ii dam free la final
+  if(buffer == NULL){ //am marit cu 1 pentru a tine cont de '\0' ce repara o problema la printf de terminare de sir
     perror("Erroare de alocare de memorie in functia list\n");
     exit(-1);
   }
   printf("\nTreasures: \n");
-  while(read(fd, buffer, 1024) > 0){ //listam treasures 
+  int Bytes_cititi; //aparent int functioneaza dar nu e varianta preferata din ceva motive de marime. ssize_t e preferat
+  while((Bytes_cititi = read(fd, buffer, 128)) > 0){ //listam treasures
+    buffer[Bytes_cititi] = '\0'; // adaugăm terminator de string pentru al putea printa, fara el printul printeaza ceva random ca nu are unde sa se opreasca din buffer
     printf("%s", buffer);
-  }
+}
 
   close(fd);
   free(buffer);
@@ -180,7 +182,7 @@ void view(char *hunt_id, char *ID){ //View details of a specific treasure
     exit(-1);
   }
 
-  //read();
+  read(fd, buffer, 1024); 
 
   close(fd);
   free(path);
