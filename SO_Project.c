@@ -6,6 +6,7 @@
 #include <dirent.h>
 #include <fcntl.h> //asta e pentru functia de open
 #include <unistd.h>
+#include <time.h>
 
 //Intrebare pt prof:
 // Hunt_ID e un file name
@@ -130,10 +131,46 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
 }
 
 void list(char *hunt_id){ //List all treasures in the specified hunt. First print the hunt name, the (total) file size and last modification time of its treasure file(s), then list the treasures.
-  DIR *dr = opendir(hunt_id);
+  char *folder_path = folder_path_maker(hunt_id);
+  char *path = path_maker(hunt_id, "Treasures.txt");
+  
+  printf("Hunt Name: %s \n", hunt_id); //printeaza numele huntului specific
+  
+  struct stat st; //Printarea marimiii fisierului in bytes
+  if (stat(path, &st) == 0) {
+    printf("File size: %ld bytes\n", st.st_size);
+    printf("Last modification time (secunde): %ld\n", st.st_mtim.tv_sec);
 
+    // Convert modification time to local time
+    struct tm *mod_time = localtime(&st.st_mtim.tv_sec);
 
-  closedir(dr);
+    // Format time as a string
+    char time_str[100];
+    strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", mod_time);
+    
+    printf("Last modification time: %s\n", time_str);
+
+  }
+
+  int fd = open(path, O_RDONLY );
+  char *buffer = malloc(sizeof(char) * 1024); //facem un buffer penru a citit, si ii dam free la final
+  if(buffer == NULL){
+    perror("Erroare de alocare de memorie in functia list\n");
+    exit(-1);
+  }
+  
+  while(read(fd, buffer, 1024) > 0){ //listam treasures 
+    printf("%s", buffer);
+  }
+  /*
+  read(fd, buffer, 1024);
+  printf("%s\n", buffer);
+*/
+
+  close(fd);
+  free(buffer);
+  free(path);
+  free(folder_path);
 }
 
 void view(char *hunt_id, char *ID){ //View details of a specific treasure
