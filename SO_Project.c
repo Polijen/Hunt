@@ -159,7 +159,7 @@ void list(char *hunt_id){ //List all treasures in the specified hunt. First prin
     exit(-1);
   }
   printf("\nTreasures: \n");
-  int Bytes_cititi; //aparent int functioneaza dar nu e varianta preferata din ceva motive de marime. ssize_t e preferat
+  int Bytes_cititi = 0; //aparent int functioneaza dar nu e varianta preferata din ceva motive de marime. ssize_t e preferat
   while((Bytes_cititi = read(fd, buffer, 128)) > 0){ //listam treasures
     buffer[Bytes_cititi] = '\0'; // adaugăm terminator de string pentru al putea printa, fara el printul printeaza ceva random ca nu are unde sa se opreasca din buffer
     printf("%s", buffer);
@@ -181,8 +181,11 @@ void view(char *hunt_id, char *ID){ //View details of a specific treasure
     perror("Erroare de alocare de memorie in functia list\n");
     exit(-1);
   }
+  int Bytes_cititi = 0;
+  while ((Bytes_cititi = read(fd, buffer, 1024)) > 0){//aici citim si prelucram stringul pentru a gasi si arata doar hunt-ul 
 
-  read(fd, buffer, 1024); 
+
+  }
 
   close(fd);
   free(path);
@@ -190,15 +193,35 @@ void view(char *hunt_id, char *ID){ //View details of a specific treasure
 }
 
 void remove_treasure(char *hunt_id, char *ID){ //Remove treasure, trebuie sa le sterg din fisier
-  char *path = path_maker(hunt_id, ID);
-  if(remove(path) != 0){
+  //char *path = path_maker(hunt_id, ID);
+  
+
+  
+  
+  /*
+  if(remove(path) != 0){ //stergem fisierul vechi
     perror("Erroare de stergere\n");
 
-  }
+  }*/
 }
 
 void remove_hunt(char *hunt_id){ //Remove an entire hunt
+  char *folder_path = folder_path_maker(hunt_id);
+  char path[64] = "Hunts/"; //realistic ne trebuie 27 de caractere, restul e sa fie
+  char *file_name = "/Treasures.txt";
+  strcat(path, hunt_id);
+  strcat(path, file_name);
+  
+  if(remove(path) != 0){ //sa adaug stergere pentru mai multe fisiere
+    perror("Erroare de stergere\n");
 
+  }
+  
+  if(rmdir(folder_path) != 0){ //stergem fisierul vechi, dupa ce lam golit
+    perror("Erroare de stergere\n");
+
+  }
+  free(folder_path);
 }
 
 
@@ -229,14 +252,14 @@ int main(int argc, char **argv){
     list(argv[2]);
   }
   else if (!strcmp(argv[1], "view")){
-    view(argv[1], argv[2]);
+    view(argv[2], argv[3]);
   }
   else if (!strcmp(argv[1], "remove_treasure")){
-    remove_treasure(argv[1] ,argv[2]);
+    remove_treasure(argv[2] ,argv[3]);
     
   }
   else if (!strcmp(argv[1], "remove_hunt")){
-    printf("rn hunt\n");
+    remove_hunt(argv[2]);
   }
   else{
     printf("Operation does not exist\n");
