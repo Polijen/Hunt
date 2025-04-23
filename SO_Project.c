@@ -181,28 +181,131 @@ void view(char *hunt_id, char *ID){ //View details of a specific treasure
     perror("Erroare de alocare de memorie in functia list\n");
     exit(-1);
   }
-  int Bytes_cititi = 0;
-  while ((Bytes_cititi = read(fd, buffer, 1024)) > 0){//aici citim si prelucram stringul pentru a gasi si arata doar hunt-ul 
+
+  int bytes_read;
+  char *current_line = NULL;
+  int current_line_len = 0;
+  int current_line_capacity = 0;
+  char *found_line = NULL;
+  char *remaining_buffer = NULL;
+  int remaining_len = 0;
 
 
-  }
+  while ((bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0) {
+    buffer[bytes_read] = '\0'; // Make a string to be a string in C :D
 
-  close(fd);
-  free(path);
-  free(folder_path);
+    //Append ce a ramas de la citirea precendenta ce nu ara o linie comora la read-ul current
+    char *combined_buffer = NULL;
+    int combined_len = remaining_len + bytes_read + 1;
+    if((combined_buffer = malloc(combined_len)) == NULL){
+        perror("Eroare de alocare memorie in functia view");
+        free(remaining_buffer);
+        close(fd);
+        free(path);
+        free(folder_path);
+        exit(-1);
+    }
+    if (remaining_buffer != NULL) { 
+        strcpy(combined_buffer, remaining_buffer);
+        free(remaining_buffer);
+        remaining_buffer = NULL;
+    } else {
+        combined_buffer[0] = '\0'; //cand nu mai am ce sa adaug, sa fie un string gol ca imi face viata mai usora 
+    }
+    strcat(combined_buffer, buffer);
+    remaining_len = 0; // Reset
+
+    char *newline_ptr;
+    char *last_pos = combined_buffer;
+
+    while ((newline_ptr = strchr(last_pos, '\n')) != NULL) { //cat timp stringul are "\n" --> avem o linie comoara
+        int line_part_len = newline_ptr - last_pos;
+
+        // Extend current_line
+        if (current_line_len + line_part_len >= current_line_capacity) {
+            current_line_capacity = current_line_len + line_part_len + 1;
+            char *temp = realloc(current_line, current_line_capacity);
+            if (temp == NULL) {
+                perror("Eroare de realocare memorie in functia view _second while");
+                free(current_line);
+                free(combined_buffer);
+                close(fd);
+                free(path);
+                free(folder_path);
+                exit(-1);
+            }
+            current_line = temp;
+        }
+        strncpy(current_line + current_line_len, last_pos, line_part_len);
+        current_line_len += line_part_len;
+        current_line[current_line_len] = '\0';
+
+        
+        //printf("\n%s\n", current_line); //avem linia si o verificam
+        char *id_token;
+        char *line_copy = strdup(current_line);
+        if (line_copy == NULL) {
+            perror("Eroare de alocare memorie");
+            free(current_line);
+            free(combined_buffer);
+            close(fd);
+            free(path);
+            free(folder_path);
+            exit(-1);
+        }
+        id_token = strtok(line_copy, "|"); //Asta e numele la treasure
+
+        if (id_token != NULL && strcmp(id_token, ID) == 0) {
+            printf("Am gasit comoara:\n");
+            printf("%s\n", current_line);
+            found_line = strdup(current_line);
+            free(line_copy);
+            break; //exit inner loop (a fost gasit the treasure)
+        }
+        free(line_copy);
+
+        current_line_len = 0; // Reset for the next line
+        last_pos = newline_ptr + 1; // Move past the newline
+    }
+
+    // Store any remaining part of the combined buffer
+    if (*last_pos != '\0') {
+        remaining_len = strlen(last_pos);
+        remaining_buffer = malloc(remaining_len + 1);
+        if (remaining_buffer == NULL) {
+            perror("Eroare de alocare memorie");
+            free(current_line);
+            free(combined_buffer);
+            close(fd);
+            free(path);
+            free(folder_path);
+            exit(-1);
+        }
+        strcpy(remaining_buffer, last_pos);
+    }
+
+    free(combined_buffer);
+
+    if (found_line != NULL) {
+        break; // Exit outer loop if found
+    }
+}
+
+if (found_line == NULL) {
+  printf("Comoara cu ID-ul '%s' nu a fost gasita.\n", ID);
+}
+
+close(fd);
+free(path);
+free(folder_path);
+free(current_line);
+free(found_line);
+free(remaining_buffer);
+
 }
 
 void remove_treasure(char *hunt_id, char *ID){ //Remove treasure, trebuie sa le sterg din fisier
-  //char *path = path_maker(hunt_id, ID);
-  
 
-  
-  
-  /*
-  if(remove(path) != 0){ //stergem fisierul vechi
-    perror("Erroare de stergere\n");
-
-  }*/
 }
 
 void remove_hunt(char *hunt_id){ //Remove an entire hunt
