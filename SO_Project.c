@@ -86,7 +86,52 @@ char* folder_path_maker(char *hunt_id){
 }
 
 
+
+
 //functiile de implementat
+void log_operation(char *action, char *hunt_id, char *treasure_id) {
+
+  char *path = path_maker(hunt_id, "logged_hunt");
+  int fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0644);
+  if (fd < 0){
+    perror("Nu am putut deschide fisierul de log");
+    free(path);
+    return;
+  }
+  
+  time_t now = time(NULL);
+  struct tm *tm_info = localtime(&now);
+  char time_str[64];
+  strftime(time_str, sizeof(time_str), "%d-%m-%Y %H:%M:%S", tm_info);
+  
+  
+  char log_line[1024];
+  snprintf(log_line, sizeof(log_line), "%s - %s | ID: %s\n", time_str, action, treasure_id != NULL ? treasure_id : "-");
+  
+  
+  if ((write(fd, log_line, strlen(log_line))) == -1){
+    perror("Erroare de scriere\n");
+    close(fd);
+    free(path);
+    exit(-2);
+  }
+  
+  close(fd);
+  free(path);
+  
+  char linkname[256];
+  snprintf(linkname, sizeof(linkname), "logged_hunt-%s", hunt_id);
+  struct stat sb;
+  if (lstat(linkname, &sb) == -1) { // check for link existance 
+    char *file = path_maker(hunt_id, "logged_hunt");
+    if (symlink(file, linkname) == -1){
+      perror("Eroare la creare symlink pentru log");
+    }
+    free(file);
+  }
+}
+
+//functii cu operatii
 
 void add(char *hunt_id){ //Add a new treasure to the specified hunt (game session). Each hunt is stored in a separate directory.
   
@@ -126,6 +171,8 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   }
 
   close(fd);
+
+  log_operation("add", hunt_id, data.Treasure_ID); //e pus aici pentru ca doresc sa inregistrez si numele la treasure 
 
 //eliberam stringurile de path
  free(path);
@@ -503,6 +550,9 @@ void remove_hunt(char *hunt_id){ //Remove an entire hunt
 }
 
 
+
+
+
 int main(int argc, char **argv){
 
   if (argc < 3 || argc > 4){ //verificam ca numarul de argumente corect
@@ -525,19 +575,23 @@ int main(int argc, char **argv){
   if (!strcmp(argv[1], "add")){
     // printf("Adunare\n, %s" ,argv[2]);
     add(argv[2]);
+    
   }
   else if (!strcmp(argv[1], "list")){
     list(argv[2]);
+    log_operation(argv[1], argv[2], NULL);
   }
   else if (!strcmp(argv[1], "view")){
     view(argv[2], argv[3]);
+    log_operation(argv[1], argv[2], NULL);
   }
   else if (!strcmp(argv[1], "remove_treasure")){
     remove_treasure(argv[2] ,argv[3]);
-    
+    log_operation(argv[1], argv[2], NULL);
   }
   else if (!strcmp(argv[1], "remove_hunt")){
     remove_hunt(argv[2]);
+    log_operation(argv[1], argv[2], NULL);
   }
   else{
     printf("Operation does not exist\n");
