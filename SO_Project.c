@@ -162,7 +162,7 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   DIR *dr = opendir(folder_path);
   if (dr == NULL){
     printf("Doresti o noua sesiune ? [y, n]\n");
-    if((scanf("%c", &ask)) != 1){
+    if((scanf(" %c", &ask)) != 1){
       perror("Introducere de data incompatibila");
       return;
     }
