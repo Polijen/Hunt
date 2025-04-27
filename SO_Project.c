@@ -44,10 +44,19 @@ T_info in_data(){ //ar fi bine sa introduc si verificare la input + limitatoare
   scanf("%s", temp.Treasure_ID);
   printf("User Name: ");
   scanf("%s", temp.User_Name);
-  printf("GPS (x,y): ");
-  scanf("%f,%f", &temp.GPS.X, &temp.GPS.Y);
-  printf("Clue: ");
-  scanf("%s", temp.clue);
+  printf("GPS introduceti numele cu virgula fara spatiu inte ele, exemplu: x,y : ");
+  if((scanf("%f,%f", &temp.GPS.X, &temp.GPS.Y)) != 2){
+    printf("Introdu coordonatele corespunzator\n");
+    return temp; //returneaza un temp care nu e bun si va pica la verifiacare, respectiv se verifica datele. Mai exat la valoare va pica programul
+    //daca as da exit, as lasa o valoare alocata fara a putea de ai da free... 
+  }
+  printf("Clue: "); //ca sa citeasca o propozitie normala 
+  getchar();
+  fgets(temp.clue, sizeof(temp.clue), stdin);
+  int len = strlen(temp.clue);
+  if (len > 0 && temp.clue[len-1] == '\n') {
+      temp.clue[len-1] = '\0';
+  }
   printf("Value: ");
   scanf("%d", &temp.value);
   
@@ -84,7 +93,6 @@ char* folder_path_maker(char *hunt_id){
   strcat(folder_path, hunt_id);
   return (folder_path);
 }
-
 
 
 
@@ -131,6 +139,18 @@ void log_operation(char *action, char *hunt_id, char *treasure_id) {
   }
 }
 
+int data_verification(T_info data){
+  int good = 0; //we want it to be 0
+  if((strlen(data.clue) == 0 ) || (strlen(data.Treasure_ID) == 0 ) || (strlen(data.User_Name) == 0 )){
+    good = 1;
+  }
+  if(data.value <= 0){
+    printf("Valoarea trebuie sa fie un numar pozitiv");
+    good = 1;
+  }
+  return good;
+}
+
 //functii cu operatii
 
 void add(char *hunt_id){ //Add a new treasure to the specified hunt (game session). Each hunt is stored in a separate directory.
@@ -142,7 +162,10 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   DIR *dr = opendir(folder_path);
   if (dr == NULL){
     printf("Doresti o noua sesiune ? [y, n]\n");
-    scanf("%c", &ask);
+    if((scanf("%c", &ask)) != 1){
+      perror("Introducere de data incompatibila");
+      return;
+    }
     if(ask == 'y'){
       mkdir(folder_path,  S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IROTH ); //creeaza directorul si dupa scrie in el
       
@@ -156,8 +179,11 @@ void add(char *hunt_id){ //Add a new treasure to the specified hunt (game sessio
   }
   closedir(dr);
 
-  T_info data = in_data(); //
-
+  T_info data = in_data(); //trebuie sa verific integritatea datelor din data
+  if (data_verification(data) == 1){ //ceva fin data nu a fost scris bine
+    free(folder_path);
+    exit(1);
+  }
   char *path = path_maker(hunt_id, "Treasures.txt");
   int fd = open(path,O_WRONLY | O_CREAT | O_APPEND, 0644); // 000 101 100 100
   printf("\n%s\n", path);
