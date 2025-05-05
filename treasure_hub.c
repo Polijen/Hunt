@@ -19,7 +19,7 @@ void start_monitor(pid_t pid){ //starts a separate background process that monit
     }
 
     pid = fork();
-    if(pid == 0){ //proces copil
+    if(pid == 0){ //proces copil, unde dam execute la program 
         printf("Avem codul copil");
     }
     else if(pid > 0){ //proces parinte
@@ -32,16 +32,37 @@ void start_monitor(pid_t pid){ //starts a separate background process that monit
 }
 
 void list_hunts(){ //the monitor to list the hunts and the total number of treasures in each
-
+    //functie new ?? 
 
 }
 
 void list_treasures(){ //tells the monitor to show the information about all treasures in a hunt, the same way as the command line at the previous stage did
+    //practic functia list din phase1
+    char hunt_id[128];
+    printf("Introdu Hunt-ul");
+    if (scanf("%s", hunt_id) != 1){
+        perror("Erroare de citire hunt_id\n");
+        return;
+    }
+    
 
 }
 
 void view_treasure(){ //tells the monitor to show the information about a treasure in hunt, the same way as the command line at the previous stage did
+    char hunt_id[128]; //practic comanda view din phase 1
+    char treasure[218];
+    printf("Introdu Hunt-ul");
+    if (scanf("%s", hunt_id) != 1){
+        perror("Erroare de citire hunt_id\n");
+        return;
+    }
+    printf("Introdu Treasure-ul");
+    if (scanf("%s", treasure) != 1){
+        perror("Erroare de citire treasure\n");
+        return;
+    }
 
+    
 }
 void stop_monitor(pid_t pid){ //asks the monitor to end then returns to the prompt. Prints monitor's  termination state when it ends.
 /*
