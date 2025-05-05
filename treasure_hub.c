@@ -88,7 +88,7 @@ the monitor process actually ends. To test this feature, the monitor program wil
 
 void exit_program( ){ //if the monitor still runs, prints an error message, otherwise ends the program
     if(pid > 0){
-        printf("Monitor is running, stop it first");
+        printf("Monitor is running, stop it first !!! \n");
         return;
     }
     printf("We will miss you \n");
