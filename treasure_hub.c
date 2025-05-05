@@ -10,8 +10,37 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+char* path_maker(char *f_name ,char *hunt_id, char *treasure){
+    char *path = NULL;
+    //int len = strlen(hunt_id) + strlen(treasure) + strlen("./p") + 3 + strlen(f_name);
+    if ((path = (char*)realloc(path, sizeof(char) * 512)) == NULL){
+        perror("Erroare de alocare\n");
+        exit(-1);
+      }
+      
+      strcat(path, "./p");
+      strcat(path, " ");
+    if (f_name != NULL){
+        strcat(path, f_name);
+    }
+    else{
+        printf("Function name not found\n");
+    }
+    strcat(path, " ");
+    if (hunt_id != NULL){
+        strcat(path, hunt_id);
+    }
+    else{
+        printf("Function name not found\n");
+    }
+    strcat(path, " ");
+    if (treasure != NULL){
+        strcat(path, treasure);
+    }
+    return path;
+}
 
-
+//everything lower than this comment are the fuinctions requested in the documentation
 pid_t pid = -1;
 
 void start_monitor(){ //starts a separate background process that monitors the hunts and prints to the standard output information about them when asked to
@@ -23,7 +52,7 @@ void start_monitor(){ //starts a separate background process that monitors the h
     pid = fork();
     if(pid == 0){ //proces copil, unde dam execute la program 
         printf("Avem codul copil\n");
-        execl("./p", "p", NULL);
+        execl("./o", "o", NULL);
 
     }
     else if(pid > 0){ //proces parinte
@@ -43,29 +72,39 @@ void list_hunts(){ //the monitor to list the hunts and the total number of treas
 void list_treasures(){ //tells the monitor to show the information about all treasures in a hunt, the same way as the command line at the previous stage did
     //practic functia list din phase1
     char hunt_id[128];
-    printf("Introdu Hunt-ul");
+    printf("Introdu Hunt-ul: ");
     if (scanf("%s", hunt_id) != 1){
         perror("Erroare de citire hunt_id: \n");
         return;
     }
 
+    char *path = path_maker("list", hunt_id, NULL);
 
+    system(path); //functioneaza fara monitor
+
+    free(path);
 }
 
 void view_treasure(){ //tells the monitor to show the information about a treasure in hunt, the same way as the command line at the previous stage did
     char hunt_id[128]; //practic comanda view din phase 1
     char treasure[218];
-    printf("Introdu Hunt-ul");
+    printf("Introdu Hunt-ul: ");
     if (scanf("%s", hunt_id) != 1){
         perror("Erroare de citire hunt_id: \n");
         return;
     }
-    printf("Introdu Treasure-ul");
+    printf("Introdu Treasure-ul: ");
     if (scanf("%s", treasure) != 1){
         perror("Erroare de citire treasure: \n");
         return;
     }
 
+
+    char *path = path_maker("list", hunt_id, treasure);
+
+    system(path); //functioneaza fara monitor
+
+    free(path);
     
 }
 void stop_monitor( ){ //asks the monitor to end then returns to the prompt. Prints monitor's  termination state when it ends.
@@ -99,7 +138,7 @@ int main() {
     char command[256];
     int monitor_shutting_down = 0;
     //pid_t pid = -1; //asta il vom trimite de colo-n colo, -1 pentru ca e valoarea de erroare
-    
+    //system("./p list hunt1"); //am gasit un cheap version
     while (1) {
         printf(">> ");
         if (!fgets(command, sizeof(command), stdin)) {
