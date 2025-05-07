@@ -21,7 +21,7 @@ void handle_usr2(int sig) {
 
 void handle_term(int sig) {
     printf("[MONITOR] Shutting down after 2 seconds...\n");
-    usleep(2000000); // simulate delay
+    usleep(2000000);
     exit(0);
 }
 
@@ -32,7 +32,7 @@ int main() {
     printf("[MONITOR] Running with PID %d\n", getpid());
 
     while (1) {
-        pause(); // wait for signals
+        pause();
     }
 
     return 0;
