@@ -10,6 +10,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+
+
 char* path_maker(char *f_name ,char *hunt_id, char *treasure){
     char *path = NULL;
     //int len = strlen(hunt_id) + strlen(treasure) + strlen("./p") + 3 + strlen(f_name);
@@ -17,7 +19,7 @@ char* path_maker(char *f_name ,char *hunt_id, char *treasure){
         perror("Erroare de alocare\n");
         exit(-1);
       }
-      
+      path[0] = '\0'; //pentru a nu avea unwanted behaviour 
       strcat(path, "./p");
       strcat(path, " ");
     if (f_name != NULL){
@@ -64,10 +66,33 @@ void start_monitor(){ //starts a separate background process that monitors the h
 
 }
 
-void list_hunts(){ //the monitor to list the hunts and the total number of treasures in each
+void list_hunts(){//the monitor to list the hunts and the total number of treasures in each
     //functie new ?? 
+    DIR *dir;
+    struct dirent *entry;
 
+    dir = opendir("./Hunts");
+    if (dir == NULL) {
+        perror("Unable to open hunts directory\n");
+        return;
+    }
+
+    printf("Available hunts:\n");
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        char path[512];
+        snprintf(path, sizeof(path), "./Hunts/%s", entry->d_name);
+        struct stat statbuf;
+        if (stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
+            printf("- %s\n", entry->d_name);
+        }
+    }
+
+    closedir(dir);
 }
+
 
 void list_treasures(){ //tells the monitor to show the information about all treasures in a hunt, the same way as the command line at the previous stage did
     //practic functia list din phase1
