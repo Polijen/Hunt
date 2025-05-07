@@ -44,6 +44,7 @@ char* path_maker(char *f_name ,char *hunt_id, char *treasure){
 
 //everything lower than this comment are the fuinctions requested in the documentation
 pid_t pid = -1;
+int monitor_shutting_down = 0;
 
 void start_monitor(){ //starts a separate background process that monitors the hunts and prints to the standard output information about them when asked to
     if(pid > 0){
@@ -94,44 +95,63 @@ void list_hunts(){//the monitor to list the hunts and the total number of treasu
 }
 
 
-void list_treasures(){ //tells the monitor to show the information about all treasures in a hunt, the same way as the command line at the previous stage did
+void list_treasures(){//tells the monitor to show the information about all treasures in a hunt, the same way as the command line at the previous stage did
     //practic functia list din phase1
+    if (pid <= 0) {
+        printf("Monitor is not running\n");
+        return;
+    }
+
     char hunt_id[128];
     printf("Introdu Hunt-ul: ");
-    if (scanf("%s", hunt_id) != 1){
+    if (scanf("%s", hunt_id) != 1) {
         perror("Erroare de citire hunt_id: \n");
         return;
     }
 
-    char *path = path_maker("list", hunt_id, NULL);
+    FILE *f = fopen("monitor_cmd.txt", "w");
+    if (!f) {
+        perror("Can't open command file");
+        return;
+    }
+    fprintf(f, "./p list %s\n", hunt_id);
+    fclose(f);
 
-    system(path); //functioneaza fara monitor
-
-    free(path);
+    kill(pid, SIGUSR2);  // tell the monitor to run the command
 }
 
-void view_treasure(){ //tells the monitor to show the information about a treasure in hunt, the same way as the command line at the previous stage did
-    char hunt_id[128]; //practic comanda view din phase 1
-    char treasure[218];
+
+void view_treasure() { //tells the monitor to show the information about a treasure in hunt, the same way as the command line at the previous stage did
+    //practic comanda view din phase 1
+    if (pid <= 0) {
+        printf("Monitor is not running\n");
+        return;
+    }
+
+    char hunt_id[128];
+    char treasure[128];
     printf("Introdu Hunt-ul: ");
-    if (scanf("%s", hunt_id) != 1){
+    if (scanf("%s", hunt_id) != 1) {
         perror("Erroare de citire hunt_id: \n");
         return;
     }
     printf("Introdu Treasure-ul: ");
-    if (scanf("%s", treasure) != 1){
+    if (scanf("%s", treasure) != 1) {
         perror("Erroare de citire treasure: \n");
         return;
     }
 
+    FILE *f = fopen("monitor_cmd.txt", "w");
+    if (!f) {
+        perror("Can't open command file");
+        return;
+    }
+    fprintf(f, "./p view %s %s\n", hunt_id, treasure);
+    fclose(f);
 
-    char *path = path_maker("list", hunt_id, treasure);
-
-    system(path); //functioneaza fara monitor
-
-    free(path);
-    
+    kill(pid, SIGUSR2);
 }
+
 void stop_monitor( ){ //asks the monitor to end then returns to the prompt. Prints monitor's  termination state when it ends.
 /*
 If the stop_monitor command was given, any user attempts to input commands will end up with an error message until 
@@ -144,8 +164,10 @@ the monitor process actually ends. To test this feature, the monitor program wil
     }
 
     //wait(pid);
+    monitor_shutting_down = 1;
     kill(pid, SIGTERM);
     waitpid(pid, NULL, 0);
+    monitor_shutting_down = 0;
 
     pid = -1; //reset ig
 }
@@ -161,7 +183,7 @@ void exit_program( ){ //if the monitor still runs, prints an error message, othe
 
 int main() {
     char command[256];
-    int monitor_shutting_down = 0;
+    
     //pid_t pid = -1; //asta il vom trimite de colo-n colo, -1 pentru ca e valoarea de erroare
     //system("./p list hunt1"); //am gasit un cheap version
     while (1) {
