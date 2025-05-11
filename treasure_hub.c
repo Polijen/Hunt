@@ -10,6 +10,20 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+typedef struct{ //coordonatele 
+    float X;
+    float Y;
+}Cords;
+  
+  
+typedef struct{ //User File ce stochiaza informatia despre trasures
+    char Treasure_ID[20];
+    char User_Name[128];
+    Cords GPS;
+    char clue[1024];
+    int value;
+}T_info;
+
 
 
 char* path_maker(char *f_name ,char *hunt_id, char *treasure){
@@ -87,11 +101,104 @@ void list_hunts(){//the monitor to list the hunts and the total number of treasu
         snprintf(path, sizeof(path), "./Hunts/%s", entry->d_name);
         struct stat statbuf;
         if (stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
-            printf("- %s\n", entry->d_name);
+            printf("- %s\n", entry->d_name); //aici avem numele la director -> incepem sa numeroatam treasures
+            
+            //make a path to read
+            char *path = malloc(sizeof(char) * 32); //cred ca 28 de caractere e suficent
+            path[0] = '\0'; //make an empty C string
+            strcat(path, "Hunts/");
+            strcat(path, entry->d_name); //String a hunt-ului curent
+            strcat(path, "/");
+            strcat(path, "Treasures.txt"); //folderul final, this is the path
+
+            //open the folder and read lines
+            int fd = open(path, O_RDONLY);
+            char *buffer = malloc(sizeof(char) *2048); //1184 bytes e marimea la T_Info
+            if(buffer == NULL){
+                free(path);
+                free(buffer);
+                exit(-1);
+            }
+            //numeroteaza treasures
+            int counter = 0; //se resetaeaza la fiecare hunt
+	    
+            int bytes_read;
+	        char *remaining_buffer = NULL;
+	        int remaining_len = 0;
+	    
+	    
+	        while ((bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0){
+	            buffer[bytes_read] = '\0'; // Make a string to be a string in C :D
+	      
+	            //Append ce a ramas de la citirea precendenta ce nu ara o linie comora la read-ul current
+	            char *combined_buffer = NULL;
+	            int combined_len = remaining_len + bytes_read + 1;
+	            if((combined_buffer = malloc(combined_len)) == NULL){
+		            perror("Eroare de alocare memorie in functia view");
+		            free(remaining_buffer);
+		            close(fd);
+		            free(path);
+		            exit(-1);
+	            }
+	            if (remaining_buffer != NULL){ 
+		            strcpy(combined_buffer, remaining_buffer);
+		            free(remaining_buffer);
+		            remaining_buffer = NULL;
+	            }
+	            else{
+		            combined_buffer[0] = '\0'; //cand nu mai am ce sa adaug, sa fie un string gol ca imi face viata mai usora 
+	            }
+	            strcat(combined_buffer, buffer);
+	            remaining_len = 0; // Reset
+	      
+	            char *newline_ptr;
+	            char *last_pos = combined_buffer;
+	      
+	            while ((newline_ptr = strchr(last_pos, '\n')) != NULL){ //cat timp stringul are "\n" --> avem o linie comoara
+                    //daca avem o linie -> count++, dupa trecem sa facem urmatoarea linie
+		            counter++;
+                    
+
+		            last_pos = newline_ptr + 1; // Move past the newline
+	            }
+	      
+	            // Store any remaining part of the combined buffer
+	            if (*last_pos != '\0'){
+		            remaining_len = strlen(last_pos);
+		            remaining_buffer = malloc(remaining_len + 1);
+		            if (remaining_buffer == NULL){
+		                perror("Eroare de alocare memorie");
+		                free(combined_buffer);
+		                close(fd);
+		                free(path);
+		                exit(-1);
+		            }
+		            strcpy(remaining_buffer, last_pos);
+	            }
+	      
+	            free(combined_buffer);
+	      
+            }
+	    
+        
+	    
+            close(fd);
+            free(path);
+            free(remaining_buffer);
+	    
+	    
+	    
+	    
+            printf("Number of treasures in %s = %d\n",entry->d_name ,counter);
+	    
+            //--------------------------------------------------------
         }
     }
-
-    closedir(dir);
+    
+    if ((closedir(dir)) != 0){
+      perror("Erroare de inchidere a directorului");
+    }
+    
 }
 
 
@@ -115,9 +222,15 @@ void list_treasures(){//tells the monitor to show the information about all trea
         return;
     }
     fprintf(f, "./p list %s\n", hunt_id);
-    fclose(f);
+    if ((fclose(f)) != 0){
+        perror("Erroare de inchidere a fisierului executabil dupa scriere\n");
+        exit(2);
+    }
 
-    kill(pid, SIGUSR2);  // tell the monitor to run the command
+    if ((kill(pid, SIGUSR2)) == -1){
+        perror("Signal failed to be sent\n");
+        exit(3);
+    }  // tell the monitor to run the command
 }
 
 
@@ -147,9 +260,16 @@ void view_treasure() { //tells the monitor to show the information about a treas
         return;
     }
     fprintf(f, "./p view %s %s\n", hunt_id, treasure);
-    fclose(f);
+    if ((fclose(f)) != 0){
+        perror("Erroare de inchidere a fisierului executabil dupa scriere\n");
+        exit(2);
+    }
 
-    kill(pid, SIGUSR2);
+    if ((kill(pid, SIGUSR2)) == -1){
+        perror("Signal filed to be sent\n");
+        exit(3);
+
+    }
 }
 
 void stop_monitor( ){ //asks the monitor to end then returns to the prompt. Prints monitor's  termination state when it ends.
@@ -165,8 +285,15 @@ the monitor process actually ends. To test this feature, the monitor program wil
 
     //wait(pid);
     monitor_shutting_down = 1;
-    kill(pid, SIGTERM);
-    waitpid(pid, NULL, 0);
+    if ((kill(pid, SIGTERM)) == -1){
+        perror("Signal filed to be sent\n");
+        exit(3);
+    }
+    if ((waitpid(pid, NULL, 0)) == -1){
+        perror("Filed to change the state of the process\n");
+        exit(4);
+
+    }
     monitor_shutting_down = 0;
 
     pid = -1; //reset ig
