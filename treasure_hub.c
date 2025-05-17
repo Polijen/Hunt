@@ -69,7 +69,7 @@ void start_monitor(){ //starts a separate background process that monitors the h
     pid = fork();
     if(pid == 0){ //proces copil, unde dam execute la program 
         printf("Avem codul copil\n");
-        execl("./o", "o", NULL);
+        execl("./o", "o", NULL); //do I really need this ?
 
     }
     else if(pid > 0){ //proces parinte
@@ -83,6 +83,12 @@ void start_monitor(){ //starts a separate background process that monitors the h
 
 void list_hunts(){//the monitor to list the hunts and the total number of treasures in each
     //functie new ?? 
+
+    if (pid <= 0) {
+        printf("Monitor is not running\n");
+        return;
+    }
+
     DIR *dir;
     struct dirent *entry;
 
@@ -94,13 +100,13 @@ void list_hunts(){//the monitor to list the hunts and the total number of treasu
 
     printf("Available hunts:\n");
     while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0){ //face skip la folderele . so .. 
             continue;
-
+        }
         char path[512];
         snprintf(path, sizeof(path), "./Hunts/%s", entry->d_name);
         struct stat statbuf;
-        if (stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
+        if (stat(path, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)){
             printf("- %s\n", entry->d_name); //aici avem numele la director -> incepem sa numeroatam treasures
             
             //make a path to read
@@ -180,18 +186,12 @@ void list_hunts(){//the monitor to list the hunts and the total number of treasu
 	      
             }
 	    
-        
-	    
             close(fd);
             free(path);
             free(remaining_buffer);
 	    
-	    
-	    
-	    
             printf("Number of treasures in %s = %d\n",entry->d_name ,counter);
 	    
-            //--------------------------------------------------------
         }
     }
     
@@ -254,7 +254,7 @@ void view_treasure() { //tells the monitor to show the information about a treas
         return;
     }
 
-    FILE *f = fopen("monitor_cmd.txt", "w");
+    FILE *f = fopen("monitor_cmd.txt", "w"); //inlocuim fisierul cu pipes pentrua trimite comanda de executie 
     if (!f) {
         perror("Can't open command file");
         return;
