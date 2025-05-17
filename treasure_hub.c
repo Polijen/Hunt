@@ -59,6 +59,7 @@ char* path_maker(char *f_name ,char *hunt_id, char *treasure){
 //everything lower than this comment are the fuinctions requested in the documentation
 pid_t pid = -1;
 int monitor_shutting_down = 0;
+int cmd_pipe = -1;
 
 void start_monitor(){ //starts a separate background process that monitors the hunts and prints to the standard output information about them when asked to
     if(pid > 0){
@@ -66,13 +67,26 @@ void start_monitor(){ //starts a separate background process that monitors the h
         return;
     }
 
+
+    int pipet[2];
+    if (pipe(pipet) < 0) {
+        perror("pipe");
+        return;
+    }
+
+
     pid = fork();
     if(pid == 0){ //proces copil, unde dam execute la program 
-        printf("Avem codul copil\n");
-        execl("./o", "o", NULL); //do I really need this ?
+        //printf("Avem codul copil\n");
+        close(pipet[1]);
+        char t_string[16];
+        snprintf(t_string, sizeof(t_string), "%d", pipet[0]);
+        execl("./o", "o", t_string, NULL); //do I really need this ?
 
     }
     else if(pid > 0){ //proces parinte
+        close(pipet[0]);
+        cmd_pipe = pipet[1];
         printf("Monitor is PID: %d\n", pid);
     }
     else{ //nu sa deschis adica e -1
@@ -215,18 +229,26 @@ void list_treasures(){//tells the monitor to show the information about all trea
         perror("Erroare de citire hunt_id: \n");
         return;
     }
+    getchar();
 
+    char buffer[512];
+    int len = snprintf(buffer, sizeof(buffer), "./p list %s\n", hunt_id);
+    write(cmd_pipe, buffer, len); //scriem in pipe
+
+
+    /*
     FILE *f = fopen("monitor_cmd.txt", "w");
     if (!f) {
         perror("Can't open command file");
         return;
     }
     fprintf(f, "./p list %s\n", hunt_id);
+
     if ((fclose(f)) != 0){
         perror("Erroare de inchidere a fisierului executabil dupa scriere\n");
         exit(2);
     }
-
+    */
     if ((kill(pid, SIGUSR2)) == -1){
         perror("Signal failed to be sent\n");
         exit(3);
@@ -253,18 +275,27 @@ void view_treasure() { //tells the monitor to show the information about a treas
         perror("Erroare de citire treasure: \n");
         return;
     }
+    getchar(); //pentru a scapa de enter 
 
+
+    char buffer[512];
+    int len = snprintf(buffer, sizeof(buffer), "./p view %s %s\n", hunt_id, treasure);
+    write(cmd_pipe, buffer, len); //scriem in pipe
+
+    
+    /*
     FILE *f = fopen("monitor_cmd.txt", "w"); //inlocuim fisierul cu pipes pentrua trimite comanda de executie 
     if (!f) {
         perror("Can't open command file");
         return;
     }
     fprintf(f, "./p view %s %s\n", hunt_id, treasure);
+
     if ((fclose(f)) != 0){
         perror("Erroare de inchidere a fisierului executabil dupa scriere\n");
         exit(2);
     }
-
+    */
     if ((kill(pid, SIGUSR2)) == -1){
         perror("Signal filed to be sent\n");
         exit(3);
@@ -294,6 +325,8 @@ the monitor process actually ends. To test this feature, the monitor program wil
         exit(4);
 
     }
+    close(cmd_pipe); //curata the pipe
+
     monitor_shutting_down = 0;
 
     pid = -1; //reset ig
