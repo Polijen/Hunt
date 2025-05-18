@@ -35,7 +35,7 @@ void handle_usr2(int sig) {
     */
 }
 
-void handle_term(int sig) {
+void handle_term(int sig) { 
     printf("[MONITOR] Shutting down after 2 seconds...\n");
     usleep(20000); 
     exit(0);
@@ -43,7 +43,7 @@ void handle_term(int sig) {
 
 int main(int argc, char **argv) {
 
-    if (argc != 2) {
+    if (argc != 2) { //verificam ca sa apelact bine programul (2 variabile)
         fprintf(stderr, "Usage: %s <cmd_pipe_read_fd>\n", argv[0]);
         return 1;
     }
@@ -53,7 +53,8 @@ int main(int argc, char **argv) {
     struct sigaction sa;    
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-
+    
+    //am luat fiecare semnal in parte, daca nu e unul se trece la urmatorul
     sa.sa_handler = handle_usr2;    
     if (sigaction(SIGUSR2, &sa, NULL) < 0) {
         perror("sigaction SIGUSR2");

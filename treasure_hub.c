@@ -233,7 +233,10 @@ void list_treasures(){//tells the monitor to show the information about all trea
 
     char buffer[512];
     int len = snprintf(buffer, sizeof(buffer), "./p list %s\n", hunt_id);
-    write(cmd_pipe, buffer, len); //scriem in pipe
+    if((write(cmd_pipe, buffer, len)) == -1){
+        perror("Erroare de scriere in pipe");
+        return;
+    } //scriem in pipe
 
 
     /*
@@ -280,8 +283,10 @@ void view_treasure() { //tells the monitor to show the information about a treas
 
     char buffer[512];
     int len = snprintf(buffer, sizeof(buffer), "./p view %s %s\n", hunt_id, treasure);
-    write(cmd_pipe, buffer, len); //scriem in pipe
-
+    if((write(cmd_pipe, buffer, len)) == -1){
+        perror("Erroare de scriere in pipe");
+        return;
+    } //scriem in pipe
     
     /*
     FILE *f = fopen("monitor_cmd.txt", "w"); //inlocuim fisierul cu pipes pentrua trimite comanda de executie 
@@ -325,7 +330,9 @@ the monitor process actually ends. To test this feature, the monitor program wil
         exit(4);
 
     }
-    close(cmd_pipe); //curata the pipe
+    if((close(cmd_pipe)) == -1){
+        perror("Erroare la close pipe");
+    } //curata the pipe
 
     monitor_shutting_down = 0;
 
