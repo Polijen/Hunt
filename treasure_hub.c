@@ -9,6 +9,7 @@
 #include <time.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <errno.h>
 
 typedef struct{ //coordonatele 
     float X;
@@ -60,6 +61,7 @@ char* path_maker(char *f_name ,char *hunt_id, char *treasure){
 pid_t pid = -1;
 int monitor_shutting_down = 0;
 int cmd_pipe = -1;
+int out_pipe = -1;
 
 void start_monitor(){ //starts a separate background process that monitors the hunts and prints to the standard output information about them when asked to
     if(pid > 0){
@@ -68,25 +70,31 @@ void start_monitor(){ //starts a separate background process that monitors the h
     }
 
 
-    int pipet[2];
-    if (pipe(pipet) < 0) {
+    int cmdfd[2], outfd[2];
+    if (pipe(cmdfd) < 0 || pipe(outfd) < 0){
         perror("pipe");
         return;
     }
 
-
     pid = fork();
     if(pid == 0){ //proces copil, unde dam execute la program 
         //printf("Avem codul copil\n");
-        close(pipet[1]);
-        char t_string[16];
-        snprintf(t_string, sizeof(t_string), "%d", pipet[0]);
-        execl("./o", "o", t_string, NULL); //do I really need this ?
+        close(cmdfd[1]);
+        close(outfd[0]);
+        
+        char a1[16], a2[16];
+        snprintf(a1, sizeof(a1), "%d", cmdfd[0]);
+        snprintf(a2, sizeof(a2), "%d", outfd[1]);
+        execl("./o", "o", a1, a2, NULL);
+        perror("execl monitor");
+        exit(1);
 
     }
     else if(pid > 0){ //proces parinte
-        close(pipet[0]);
-        cmd_pipe = pipet[1];
+        close(cmdfd[0]);
+        close(outfd[1]);
+        cmd_pipe = cmdfd[1];
+        out_pipe = outfd[0];
         printf("Monitor is PID: %d\n", pid);
     }
     else{ //nu sa deschis adica e -1
@@ -348,11 +356,111 @@ void exit_program( ){ //if the monitor still runs, prints an error message, othe
     exit(0);
 }
 
+
+void calculate_score() {
+    DIR *d = opendir("Hunts");
+    if (!d) { perror("opendir Hunts"); return; }
+
+    struct dirent *ent;
+    while ((ent = readdir(d)) != NULL) {
+        if (ent->d_type != DT_DIR ||
+            !strcmp(ent->d_name, ".") ||
+            !strcmp(ent->d_name, "..")) continue;
+
+        int pfd[2];
+        if (pipe(pfd) < 0) { perror("pipe"); continue; }
+
+        pid_t c = fork();
+        if (c == 0) {
+            // child: run score_calculator
+            close(pfd[0]);
+            dup2(pfd[1], STDOUT_FILENO);
+            execl("./score_calculator", "score_calculator", ent->d_name, NULL);
+            perror("execl score_calculator");
+            exit(1);
+        }
+        // parent:
+        close(pfd[1]);
+        printf("Scores for hunt %s:\n", ent->d_name);
+
+        char buf[256];
+        ssize_t n;
+        while ((n = read(pfd[0], buf, sizeof(buf)-1)) > 0) {
+            buf[n] = '\0';
+            fputs(buf, stdout);
+        }
+        close(pfd[0]);
+        waitpid(c, NULL, 0);
+    }
+    closedir(d);
+}
+
+
+void event_loop() {
+    char command[512];
+    while (1) {
+        fd_set rfds;
+        FD_ZERO(&rfds);
+        FD_SET(STDIN_FILENO, &rfds);
+        if (out_pipe > 0) FD_SET(out_pipe, &rfds);
+
+        int maxfd = out_pipe > STDIN_FILENO ? out_pipe : STDIN_FILENO;
+        if (select(maxfd+1, &rfds, NULL, NULL, NULL) < 0) {
+            if (errno == EINTR) continue;
+            perror("select");
+            exit(1);
+        }
+
+        if (out_pipe > 0 && FD_ISSET(out_pipe, &rfds)){//monitor trimite ceva
+            ssize_t n = read(out_pipe, command, sizeof(command)-1);
+            if (n <= 0) {
+                // monitor closed pipe
+                close(out_pipe);
+                out_pipe = -1;
+            } else {
+                command[n] = '\0';
+                printf("%s", command);
+            }
+        }
+
+        if (FD_ISSET(STDIN_FILENO, &rfds)){//sa scris o comanda
+            printf(">> ");
+            if (!fgets(command, sizeof(command), stdin)) {
+                break;
+            }
+            if (monitor_shutting_down) {
+                printf("Monitor is shutting down, please wait...\n");
+                continue;
+            }
+
+            if (strncmp(command, "start_monitor", 13) == 0) {
+                start_monitor();
+            } else if (strncmp(command, "list_hunts", 10) == 0) {
+                list_hunts();
+            } else if (strncmp(command, "list_treasures", 14) == 0) {
+                list_treasures();
+            } else if (strncmp(command, "view_treasure", 13) == 0) {
+                view_treasure();
+            } else if (strncmp(command, "stop_monitor", 12) == 0) {
+                stop_monitor();
+            } else if (strncmp(command, "calculate_score", 15) == 0) {
+                calculate_score();
+            } else if (strncmp(command, "exit", 4) == 0) {
+                exit_program();
+            } else {
+                printf("Unknown command.\n");
+            }
+        }
+    }
+}
+
+
 int main() {
-    char command[256];
+    //char command[256];
     
     //pid_t pid = -1; //asta il vom trimite de colo-n colo, -1 pentru ca e valoarea de erroare
     //system("./p list hunt1"); //am gasit un cheap version
+    /*
     while (1) {
         printf(">> ");
         if (!fgets(command, sizeof(command), stdin)) {
@@ -373,12 +481,16 @@ int main() {
             view_treasure();
         } else if (strncmp(command, "stop_monitor", 12) == 0) {
             stop_monitor();
+        } else if (strncmp(command, "calculate_score", 15) == 0) {
+            calculate_score();
         } else if (strncmp(command, "exit", 4) == 0) {
             exit_program();
         } else {
             printf("Unknown command.\n");
         }
-    }
+    }*/
+
+    event_loop();
 
     return 0;
 }

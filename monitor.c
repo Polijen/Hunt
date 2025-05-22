@@ -4,6 +4,8 @@
 #include <unistd.h>
 
 int monitor_fd;
+int monitor_out_fd; 
+
 
 void handle_usr2(int sig) {
 
@@ -43,12 +45,19 @@ void handle_term(int sig) {
 
 int main(int argc, char **argv) {
 
-    if (argc != 2) { //verificam ca sa apelact bine programul (2 variabile)
+    if (argc != 3) { //verificam ca sa apelact bine programul (2 variabile)
         fprintf(stderr, "Usage: %s <cmd_pipe_read_fd>\n", argv[0]);
         return 1;
     }
 
-    monitor_fd = atoi(argv[1]);   
+    monitor_fd = atoi(argv[1]); 
+    monitor_out_fd = atoi(argv[2]);  
+
+    if (dup2(monitor_out_fd, STDOUT_FILENO) < 0){
+        perror("dup2 stdout");
+        return 1;
+    }
+    close(monitor_out_fd);
 
     struct sigaction sa;    
     sigemptyset(&sa.sa_mask);
