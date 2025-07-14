@@ -4,13 +4,13 @@ A UNIX C project simulating a digital treasure hunt system with multi-process ma
 Table of Contents
 Project Overview
 
-Features
+# Features
 
 Directory Structure
 
 Build Instructions
 
-Usage
+# Usage
 
 Phase 1: File System Operations
 
@@ -26,10 +26,10 @@ Contributing
 
 License
 
-Project Overview
+# Project Overview
 This project implements a digital treasure hunt game system in C, designed for UNIX environments. It allows users to create, manage, and participate in treasure hunts, with all data stored in files. The system uses processes and signals for monitoring and interaction, and pipes for inter-process communication.
 
-Features
+# Features
 File-based treasure and hunt management
 
 Interactive command-line interface
@@ -42,7 +42,7 @@ External scoring tool integration
 
 Operation logging and symlink creation
 
-Directory Structure
+# Directory Structure
 text
 .
 ├── p              # treasure_manager executable
@@ -61,36 +61,30 @@ Clone the repository and enter the directory.
 
 Compile all components:
 
-text
 gcc -o p paste.txt
 gcc -o o monitor.c
 gcc -o treasure_hub treasure_hub.c
 gcc -o score_calc score_calc.c
 Ensure the executables are in your working directory.
 
-Usage
+# Usage
 Phase 1: File System Operations
 Manage treasure hunts and treasures using the p program:
 
 Add a treasure:
 
-text
 ./p add <hunt_id>
 List treasures:
 
-text
 ./p list <hunt_id>
 View a treasure:
 
-text
 ./p view <hunt_id> <treasure_id>
 Remove a treasure:
 
-text
 ./p remove_treasure <hunt_id> <treasure_id>
 Remove a hunt:
 
-text
 ./p remove_hunt <hunt_id>
 All operations are logged in each hunt's logged_hunt file, and a symlink logged_hunt-<hunt_id> is created in the root.
 
@@ -99,28 +93,22 @@ Use the interactive hub to manage and monitor hunts:
 
 Start the monitor:
 
-text
 ./treasure_hub
 >> start_monitor
 List all hunts and treasure counts:
 
-text
 >> list_hunts
 List treasures in a hunt:
 
-text
 >> list_treasures
 View a specific treasure:
 
-text
 >> view_treasure
 Stop the monitor:
 
-text
 >> stop_monitor
 Exit the program:
 
-text
 >> exit
 The hub and monitor communicate via signals and pipes; the monitor executes commands and sends results back to the hub.
 
@@ -129,11 +117,10 @@ Monitor output is sent back to the hub via a pipe.
 
 Calculate user scores for each hunt:
 
-text
 >> calculate_score
 This command launches a separate process for each hunt, running score_calc to sum up treasure values per user.
 
-Commands
+# Commands
 Command	Description
 start_monitor	Launch the monitor process
 list_hunts	List all hunts and treasure counts
