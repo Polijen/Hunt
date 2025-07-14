@@ -75,9 +75,13 @@ Clone the repository and enter the directory.
 Compile all components:
 
 gcc -o p treasure_manager.c
+
 gcc -o o monitor.c
+
 gcc -o hub treasure_hub.c
+
 gcc -o score_calculator score_calculator.c
+
 Ensure the executables are in your working directory.
 
 # Usage
