@@ -97,19 +97,19 @@ Start the monitor:
 >> start_monitor
 List all hunts and treasure counts:
 
->> list_hunts
+ list_hunts
 List treasures in a hunt:
 
->> list_treasures
+ list_treasures
 View a specific treasure:
 
->> view_treasure
+ view_treasure
 Stop the monitor:
 
->> stop_monitor
+ stop_monitor
 Exit the program:
 
->> exit
+ exit
 The hub and monitor communicate via signals and pipes; the monitor executes commands and sends results back to the hub.
 
 Phase 3: Pipes, Redirects & External Integration
