@@ -44,26 +44,40 @@ Operation logging and symlink creation
 
 # Directory Structure
 .
-├── p              # treasure_manager executable
-├── o              # monitor executable
-├── treasure_hub   # main interactive hub executable
-├── score_calc     # external score calculator
-├── Hunts/         # directory containing all hunt subdirectories
+
+├── p                    # treasure_manager executable
+
+├── o                    # monitor executable
+
+├── treasure_hub         # main interactive hub executable
+
+├── score_calculator     # external score calculator
+
+├── Hunts/               # directory containing all hunt subdirectories
+
 │   └── <hunt_id>/
+
 │       ├── Treasures.txt
+
 │       └── logged_hunt
+
 ├── logged_hunt-<hunt_id> # symlink to each hunt's log file
+
 ├── README.md
+
 ├── (source .c files)
+
 Build Instructions
+
 Clone the repository and enter the directory.
+
 
 Compile all components:
 
-gcc -o p paste.txt
+gcc -o p treasure_manager.c
 gcc -o o monitor.c
-gcc -o treasure_hub treasure_hub.c
-gcc -o score_calc score_calc.c
+gcc -o hub treasure_hub.c
+gcc -o score_calculator score_calculator.c
 Ensure the executables are in your working directory.
 
 # Usage
@@ -92,7 +106,7 @@ Use the interactive hub to manage and monitor hunts:
 
 Start the monitor:
 
-./treasure_hub
+./hub
  start_monitor
 List all hunts and treasure counts:
 
