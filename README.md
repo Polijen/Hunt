@@ -55,11 +55,11 @@ Operation logging and symlink creation
 
 ├── Hunts/               # directory containing all hunt subdirectories
 
-│   └── <hunt_id>/
+│        └── <hunt_id>/
 
-│       ├── Treasures.txt
+│                 ├── Treasures.txt
 
-│       └── logged_hunt
+│                 └── logged_hunt
 
 ├── logged_hunt-<hunt_id> # symlink to each hunt's log file
 
