@@ -43,7 +43,6 @@ External scoring tool integration
 Operation logging and symlink creation
 
 # Directory Structure
-text
 .
 ├── p              # treasure_manager executable
 ├── o              # monitor executable
@@ -94,7 +93,7 @@ Use the interactive hub to manage and monitor hunts:
 Start the monitor:
 
 ./treasure_hub
->> start_monitor
+ start_monitor
 List all hunts and treasure counts:
 
  list_hunts
@@ -117,7 +116,7 @@ Monitor output is sent back to the hub via a pipe.
 
 Calculate user scores for each hunt:
 
->> calculate_score
+ calculate_score
 This command launches a separate process for each hunt, running score_calc to sum up treasure values per user.
 
 # Commands
